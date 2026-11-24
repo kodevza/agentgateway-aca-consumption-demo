@@ -1,7 +1,5 @@
 # OwnerLens / OpenIDM demo — real agentgateway standalone on Azure Container Apps Consumption
 
-**Gateway is the real open-source agentgateway v1.7.0 standalone image, not the earlier FastAPI proxy.** The only Python service in this package is the separate sample **Azure Function** (business backend). There is **no Redis, PostgreSQL, Kubernetes controller, or custom authorization web service**.
-
 ## Architecture
 
 ```text
