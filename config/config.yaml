@@ -1,0 +1,80 @@
+# GENERATED; native agentgateway v1.7 standalone config
+# yaml-language-server: $schema=https://agentgateway.dev/schema/config
+frontendPolicies:
+  tracing:
+    host: ${AGENTGATEWAY_OTLP_HOST:-localhost:4317}
+    randomSampling: ${AGENTGATEWAY_TRACE_SAMPLING:-false}
+  accessLog:
+    otlp:
+      host: ${AGENTGATEWAY_SECURITY_OTLP_HOST:-http://localhost:4318}
+      protocol: http
+      path: /v1/logs
+      filter: ${AGENTGATEWAY_SECURITY_OTLP_FILTER:-false}
+      fields:
+        remove:
+        - url.query
+        - url.full
+        - mcp.session.id
+        - mcp.resource.uri
+        - mcp.error.message
+        - jwt.sub
+        - error
+        add:
+          security.caller.app_id: 'has(jwt.azp) ? jwt.azp : null'
+          security.guardrail.rejected: 'has(proxy.error) && proxy.error.message.startsWith("mcp: mcpGuardrails rejected:")'
+      policies:
+        backendAuth:
+          azure:
+            scopes:
+            - ${BACKEND_AUDIENCE}/.default
+            explicitConfig:
+              managedIdentity:
+                userAssignedIdentity:
+                  clientId: ${BACKEND_MI_CLIENT_ID}
+mcp:
+  port: 3000
+  statefulMode: stateless
+  failureMode: failClosed
+  policies:
+    mcpAuthentication:
+      mode: strict
+      issuer: ${ENTRA_ISSUER}
+      audiences:
+      - ${GATEWAY_AUDIENCE}
+      provider:
+        entra: {}
+      clientId: ${GATEWAY_CLIENT_ID}
+      resourceMetadata:
+        resource: ${MCP_RESOURCE_URL}
+        scopesSupported:
+        - api://${GATEWAY_CLIENT_ID}/gateway.invoke
+        bearerMethodsSupported:
+        - header
+    mcpAuthorization:
+      rules:
+      - has(jwt.azp) && jwt.azp == "65bf4b1b-b9a7-43a3-97c7-ea7b351f8873" && has(jwt.roles) && "Gateway.Invoke" in jwt.roles
+        && mcp.tool.name == "invoice.read"
+    mcpGuardrails:
+      processors:
+      - kind: expression
+        methods:
+          tools/call: request
+        condition: mcp.params.name == "invoice.read" && (!has(mcp.params.arguments) || !has(mcp.params.arguments.query) ||
+          !has(mcp.params.arguments.query.company) || !has(jwt.azp) || !((jwt.azp == "65bf4b1b-b9a7-43a3-97c7-ea7b351f8873"
+          && mcp.params.arguments.query.company == "PL01")))
+        reject: Company is not approved for this agent
+  targets:
+  - name: invoices
+    openapi:
+      schema:
+        file: /etc/agentgateway/openapi.json
+      host: ${BACKEND_HOST}
+    policies:
+      backendAuth:
+        azure:
+          scopes:
+          - ${BACKEND_AUDIENCE}/.default
+          explicitConfig:
+            managedIdentity:
+              userAssignedIdentity:
+                clientId: ${BACKEND_MI_CLIENT_ID}

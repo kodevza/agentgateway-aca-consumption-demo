@@ -1,0 +1,22 @@
+{
+  "openapi": "3.0.3",
+  "info": {"title": "Invoice Function Demo", "version": "1.0.0"},
+  "servers": [{"url": "/"}],
+  "paths": {
+    "/api/invoices/{invoice_id}": {
+      "get": {
+        "operationId": "invoice.read",
+        "summary": "Read one invoice from the Entra-protected Azure Function",
+        "parameters": [
+          {"name":"invoice_id","in":"path","required":true,"schema":{"type":"string","pattern":"^INV-[0-9]{4}-[0-9]{4,8}$"}},
+          {"name":"company","in":"query","required":true,"schema":{"type":"string","pattern":"^[A-Z0-9]{2,8}$"}}
+        ],
+        "responses": {
+          "200": {"description":"Invoice","content":{"application/json":{"schema":{"type":"object"}}}},
+          "401": {"description":"Missing or invalid backend token"},
+          "403": {"description":"Missing backend permission"}
+        }
+      }
+    }
+  }
+}

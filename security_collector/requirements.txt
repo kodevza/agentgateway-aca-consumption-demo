@@ -1,0 +1,4 @@
+azure-functions>=1.19,<2
+azure-identity>=1.17,<2
+azure-storage-blob>=12.20,<13
+opentelemetry-proto>=1.32,<2

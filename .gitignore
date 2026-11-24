@@ -1,0 +1,9 @@
+.env
+local.settings.json
+/gitleaks-report.*
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.zip
+config/approvals.json
